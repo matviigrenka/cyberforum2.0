@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+<article class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h1 class="h3">{{ post.title }}</h1>
+        <p class="text-muted small">By {{ post.author.username }} | Category: {{ post.category }} | Rating: <strong>{{ post.rating }}</strong></p>
+        <p class="small mb-2">
+            <span class="badge bg-info text-dark">{{ post.post_type }}</span>
+            {% if post.post_type in ["voting", "quiz"] and post.poll_type %}
+                <span class="badge bg-primary">{{ post.poll_type }}</span>
+            {% endif %}
+        </p>
+        {% if post.post_type in ["voting", "quiz"] %}
+            <div class="mb-3">
+                <h2 class="h6">Answer options</h2>
+                {% if current_user.is_authenticated %}
+                <form method="post" action="{{ url_for('main.vote_poll', post_id=post.id) }}">
+                    {% set total_votes = poll_counts.values() | sum %}
+                    <ul class="list-group mb-2">
+                        {% for option in post.poll_options_list %}
+                            {% set option_class = "" %}
+                            {% if post.post_type == "quiz" and user_poll_choice %}
+                                {% if user_poll_choice == post.quiz_correct_option %}
+                                    {% if option == post.quiz_correct_option %}
+                                        {% set option_class = "list-group-item-success" %}
+                                    {% endif %}
+                                {% else %}
+                                    {% if option == user_poll_choice %}
+                                        {% set option_class = "list-group-item-danger" %}
+                                    {% elif option == post.quiz_correct_option %}
+                                        {% set option_class = "list-group-item-success" %}
+                                    {% endif %}
+                                {% endif %}
+                            {% endif %}
+                            <li class="list-group-item {{ option_class }}">
+                                <label class="d-flex justify-content-between align-items-center mb-0">
+                                    <span>
+                                        <input class="form-check-input me-2" type="radio" name="selected_option" value="{{ option }}"
+                                            {% if user_poll_choice == option %}checked{% endif %}
+                                            {% if user_poll_choice %}disabled{% endif %}>
+                                        {{ loop.index }}. {{ option }}
+                                    </span>
+                                    {% set count = poll_counts.get(option, 0) %}
+                                    {% set percent = ((count * 100 / total_votes) if total_votes > 0 else 0) %}
+                                    <span class="badge bg-secondary">{{ count }} ({{ "%.0f"|format(percent) }}%)</span>
+                                </label>
+                            </li>
+                        {% else %}
+                            <li class="list-group-item text-muted">No options specified.</li>
+                        {% endfor %}
+                    </ul>
+                    <button class="btn btn-sm btn-primary" type="submit" {% if user_poll_choice %}disabled{% endif %}>
+                        {% if user_poll_choice %}Answer submitted{% else %}Submit answer{% endif %}
+                    </button>
+                </form>
+                {% else %}
+                <ul class="list-group">
+                    {% for option in post.poll_options_list %}
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>{{ loop.index }}. {{ option }}</span>
+                            {% set count = poll_counts.get(option, 0) %}
+                            {% set total_votes = poll_counts.values() | sum %}
+                            {% set percent = ((count * 100 / total_votes) if total_votes > 0 else 0) %}
+                            <span class="badge bg-secondary">{{ count }} ({{ "%.0f"|format(percent) }}%)</span>
+                        </li>
+                    {% else %}
+                        <li class="list-group-item text-muted">No options specified.</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                {% if post.post_type == "quiz" and current_user.is_authenticated and current_user.id == post.user_id and post.quiz_correct_option %}
+                    <p class="small text-success mt-2 mb-0">Correct answer: {{ post.quiz_correct_option }}</p>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="mb-3" data-code-render>{{ post.content }}</div>
+        {% endif %}
+
+        {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('main.vote_post', post_id=post.id) }}" class="d-flex gap-2">
+            <button class="btn btn-sm btn-success" type="submit" name="value" value="1">Like +1</button>
+            <button class="btn btn-sm btn-danger" type="submit" name="value" value="-1">Dislike -1</button>
+        </form>
+        {% if current_user.id == post.user_id %}
+        <div class="d-flex gap-2 mt-2">
+            <form method="post" action="{{ url_for('main.toggle_post_visibility', post_id=post.id) }}">
+                <input type="hidden" name="next" value="detail">
+                <button class="btn btn-sm btn-outline-warning" type="submit">
+                    Make {{ "Private" if post.is_public else "Public" }}
+                </button>
+            </form>
+            <form method="post" action="{{ url_for('main.delete_post', post_id=post.id) }}">
+                <button class="btn btn-sm btn-outline-danger" type="submit">Delete post</button>
+            </form>
+        </div>
+        {% endif %}
+        {% endif %}
+    </div>
+</article>
+
+<section class="card shadow-sm mb-4">
+    <div class="card-body">
+        <h2 class="h5">Comments</h2>
+        {% for comment in post.comments %}
+            <div class="border rounded p-2 mb-2">
+                <div class="small text-muted">{{ comment.author.username }} · {{ comment.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+                <div data-code-render>{{ comment.body }}</div>
+            </div>
+        {% else %}
+            <p class="text-muted">No comments yet.</p>
+        {% endfor %}
+    </div>
+</section>
+
+{% if current_user.is_authenticated %}
+<section class="card shadow-sm">
+    <div class="card-body">
+        <h2 class="h5">Add comment</h2>
+        <form method="post" action="{{ url_for('main.add_comment', post_id=post.id) }}">
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.body(class="form-control", rows="4") }}
+            </div>
+            <button class="btn btn-primary" type="submit">Send</button>
+        </form>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

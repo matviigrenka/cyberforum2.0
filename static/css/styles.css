@@ -1,0 +1,47 @@
+:root {
+    --bg-soft: #f5f7fb;
+    --hero-a: #0b7285;
+    --hero-b: #74c0fc;
+}
+
+body {
+    background: var(--bg-soft);
+}
+
+.hero {
+    background: linear-gradient(135deg, var(--hero-a), var(--hero-b));
+    color: #ffffff;
+}
+
+.card {
+    border: none;
+}
+
+.rendered-text {
+    white-space: pre-wrap;
+    margin-bottom: 0.75rem;
+}
+
+.code-block {
+    position: relative;
+    margin-bottom: 0.9rem;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 1px solid #2d333b;
+    background: #0d1117;
+}
+
+.code-block pre {
+    margin: 0;
+    border-radius: 0;
+    padding: 1rem 1rem 1rem 1rem;
+    overflow-x: auto;
+    background: transparent !important;
+}
+
+.code-copy-btn {
+    position: absolute;
+    top: 0.45rem;
+    right: 0.45rem;
+    z-index: 2;
+}

@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Dashboard: {{ current_user.username }}</h1>
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Create post</h2>
+                <form method="post">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.title.label(class="form-label") }}
+                        {{ form.title(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.category.label(class="form-label") }}
+                        {{ form.category(class="form-select", id="category-select") }}
+                    </div>
+                    <div class="mb-3 d-none" id="custom-category-group">
+                        {{ form.custom_category.label(class="form-label") }}
+                        {{ form.custom_category(class="form-control", placeholder="Enter your category") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.post_type.label(class="form-label") }}
+                        {{ form.post_type(class="form-select", id="post-type-select") }}
+                    </div>
+                    <div class="mb-3 d-none" id="poll-options-group">
+                        {{ form.poll_options.label(class="form-label") }}
+                        {{ form.poll_options(class="form-control", id="poll-options-input", rows="5", placeholder="Option 1\nOption 2\nOption 3") }}
+                    </div>
+                    <div class="mb-3 d-none" id="quiz-correct-group">
+                        {{ form.quiz_correct_option.label(class="form-label") }}
+                        {{ form.quiz_correct_option(class="form-select", id="quiz-correct-select") }}
+                    </div>
+                    <div class="mb-3" id="content-group">
+                        {{ form.content.label(class="form-label") }}
+                        {{ form.content(class="form-control", rows="6") }}
+                    </div>
+                    <div class="form-check mb-3">
+                        {{ form.is_public(class="form-check-input") }}
+                        {{ form.is_public.label(class="form-check-label") }}
+                    </div>
+                    <button class="btn btn-primary" type="submit">Publish</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h2 class="h5">Upload file</h2>
+                <form method="post" action="{{ url_for('main.upload_file') }}" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <input class="form-control" type="file" name="file" required>
+                    </div>
+                    <button class="btn btn-outline-primary" type="submit">Upload</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">My files</h2>
+                <ul class="list-group list-group-flush">
+                    {% for file in files %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ file.original_name }}</span>
+                            <a class="btn btn-sm btn-secondary" href="{{ url_for('main.download_file', file_id=file.id) }}">Download</a>
+                        </li>
+                    {% else %}
+                        <li class="list-group-item text-muted">No files uploaded yet.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-4">
+    <div class="card-body">
+        <h2 class="h5">My posts</h2>
+        <div class="row g-3">
+            {% for post in posts %}
+                <div class="col-md-6 col-xl-4">
+                    <article class="border rounded p-3 h-100">
+                        <h3 class="h6">{{ post.title }}</h3>
+                        <p class="small text-muted">{{ post.category }} · {{ post.created_at.strftime('%d.%m.%Y %H:%M') }} · Rating {{ post.rating }}</p>
+                        <p class="small mb-2">
+                            <span class="badge bg-info text-dark">{{ post.post_type }}</span>
+                        </p>
+                        <p>{{ post.content[:130] }}{% if post.content|length > 130 %}...{% endif %}</p>
+                        {% if post.is_public %}<span class="badge bg-success">Public</span>{% endif %}
+                        {% if not post.is_public %}<span class="badge bg-secondary">Private</span>{% endif %}
+                        <a class="btn btn-sm btn-outline-primary mt-2" href="{{ url_for('main.view_post', post_id=post.id) }}">Open</a>
+                        <form class="mt-2" method="post" action="{{ url_for('main.toggle_post_visibility', post_id=post.id) }}">
+                            <button class="btn btn-sm btn-outline-warning" type="submit">
+                                Make {{ "Private" if post.is_public else "Public" }}
+                            </button>
+                        </form>
+                        <form class="mt-2" method="post" action="{{ url_for('main.delete_post', post_id=post.id) }}">
+                            <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+                        </form>
+                    </article>
+                </div>
+            {% else %}
+                <p class="text-muted">No posts yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const categorySelect = document.getElementById("category-select");
+        const customCategoryGroup = document.getElementById("custom-category-group");
+        const postTypeSelect = document.getElementById("post-type-select");
+        const pollOptionsGroup = document.getElementById("poll-options-group");
+        const quizCorrectGroup = document.getElementById("quiz-correct-group");
+        const pollOptionsInput = document.getElementById("poll-options-input");
+        const quizCorrectSelect = document.getElementById("quiz-correct-select");
+        const contentGroup = document.getElementById("content-group");
+        if (!categorySelect || !customCategoryGroup || !postTypeSelect || !pollOptionsGroup || !quizCorrectGroup || !pollOptionsInput || !quizCorrectSelect || !contentGroup) return;
+
+        const toggleCategory = () => {
+            customCategoryGroup.classList.toggle("d-none", categorySelect.value !== "other");
+        };
+        const togglePostType = () => {
+            const isVotingLike = postTypeSelect.value === "voting" || postTypeSelect.value === "quiz";
+            pollOptionsGroup.classList.toggle("d-none", !isVotingLike);
+            contentGroup.classList.toggle("d-none", isVotingLike);
+            toggleQuiz();
+        };
+        const rebuildQuizOptions = () => {
+            const current = quizCorrectSelect.value;
+            const lines = pollOptionsInput.value
+                .split(/\r?\n/)
+                .map((x) => x.trim())
+                .filter((x) => x.length > 0);
+            quizCorrectSelect.innerHTML = "";
+            const empty = document.createElement("option");
+            empty.value = "";
+            empty.textContent = "Select correct option";
+            quizCorrectSelect.appendChild(empty);
+            lines.forEach((item) => {
+                const op = document.createElement("option");
+                op.value = item;
+                op.textContent = item;
+                quizCorrectSelect.appendChild(op);
+            });
+            if (lines.includes(current)) {
+                quizCorrectSelect.value = current;
+            } else {
+                quizCorrectSelect.value = "";
+            }
+        };
+        const toggleQuiz = () => {
+            const showQuiz = postTypeSelect.value === "quiz";
+            quizCorrectGroup.classList.toggle("d-none", !showQuiz);
+        };
+
+        categorySelect.addEventListener("change", toggleCategory);
+        postTypeSelect.addEventListener("change", togglePostType);
+        pollOptionsInput.addEventListener("input", rebuildQuizOptions);
+        toggleCategory();
+        rebuildQuizOptions();
+        togglePostType();
+    })();
+</script>
+{% endblock %}

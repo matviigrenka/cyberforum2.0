@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}StudyForum - Home{% endblock %}
+{% block content %}
+<section class="p-4 p-md-5 mb-4 rounded-3 hero">
+    <div class="container-fluid py-4">
+        <h1 class="display-6 fw-bold">StudyForum: discuss topics, share ideas, vote posts</h1>
+        <p class="col-md-9 fs-5">Forum app on Flask with authentication, post rating, comments, file upload, and REST API.</p>
+        {% if not current_user.is_authenticated %}
+            <a class="btn btn-primary btn-lg" href="{{ url_for('auth.register') }}">Join now</a>
+        {% else %}
+            <a class="btn btn-success btn-lg" href="{{ url_for('main.dashboard') }}">Open dashboard</a>
+        {% endif %}
+    </div>
+</section>
+
+<h2 class="h4 mb-3">Latest public posts</h2>
+<div class="row g-3">
+    {% for post in public_posts %}
+        <div class="col-md-6 col-lg-4">
+            <article class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="h5 card-title">{{ post.title }}</h3>
+                    <p class="card-text text-muted small mb-1">By {{ post.author.username }} · Rating {{ post.rating }}</p>
+                    <p class="card-text">{{ post.content[:150] }}{% if post.content|length > 150 %}...{% endif %}</p>
+                    <span class="badge bg-secondary">{{ post.category }}</span>
+                    <a class="btn btn-sm btn-outline-primary mt-2" href="{{ url_for('main.view_post', post_id=post.id) }}">Open thread</a>
+                </div>
+            </article>
+        </div>
+    {% else %}
+        <p class="text-muted">No public posts yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}
+

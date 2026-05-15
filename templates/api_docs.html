@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Forum API{% endblock %}
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-body">
+        <h1 class="h3 mb-3">Forum API</h1>
+        <ul class="list-group">
+            <li class="list-group-item"><code>GET /api/health</code> - service status</li>
+            <li class="list-group-item"><code>GET /api/posts/public</code> - public posts</li>
+            <li class="list-group-item"><code>GET /api/posts/my</code> - my posts (auth)</li>
+            <li class="list-group-item"><code>POST /api/posts</code> - create post (auth)</li>
+            <li class="list-group-item"><code>GET /api/posts/&lt;id&gt;/comments</code> - comments</li>
+            <li class="list-group-item"><code>POST /api/posts/&lt;id&gt;/comments</code> - add comment (auth)</li>
+            <li class="list-group-item"><code>POST /api/posts/&lt;id&gt;/vote</code> - vote with JSON <code>{"value": 1}</code> or <code>{"value": -1}</code></li>
+            <li class="list-group-item"><code>GET /api/weather?city=Vladivostok</code> - external API sample</li>
+        </ul>
+        <div class="mt-3">
+            <a class="btn btn-outline-primary" href="{{ url_for('api.public_posts') }}" target="_blank">Open JSON example</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
